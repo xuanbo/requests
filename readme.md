@@ -101,7 +101,7 @@ Content-Type: application/json
 
 ### Save File
 
-```
+```go
 func save() {
 	err := requests.Get("https://github.com/xuanbo/requests").
 		Send().

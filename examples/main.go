@@ -15,6 +15,7 @@ func main() {
 	postJson()
 	handler()
 	save()
+	getJson()
 }
 
 func getRow() {
@@ -88,6 +89,25 @@ func save() {
 	if err != nil {
 		panic(err)
 	}
+}
+
+func getJson() {
+	var v map[string]interface{}
+	err := requests.Post("http://127.0.0.1:8080/ping").
+		Params(url.Values{
+			"param1": {"value1"},
+			"param2": {"123"},
+		}).
+		Json(map[string]interface{}{
+			"json1": "value1",
+			"json2": 2,
+		}).
+		Send().
+		Json(&v)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(v)
 }
 
 func handler() {

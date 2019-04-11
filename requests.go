@@ -152,6 +152,16 @@ func (r *Result) Text() (string, error) {
 	return string(b), nil
 }
 
+func (r *Result) Json(v interface{}) error {
+	b, err := r.Raw()
+	if err != nil {
+		r.Err = err
+		return r.Err
+	}
+
+	return json.Unmarshal(b, v)
+}
+
 func (r *Result) Save(name string) error {
 	if r.Err != nil {
 		return r.Err
