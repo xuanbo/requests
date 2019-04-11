@@ -88,7 +88,7 @@ func (c *Client) Json(json interface{}) *Client {
 func (c *Client) Send() *Result {
 	r := new(Result)
 
-	if c.params != nil && len(c.params) == 0 {
+	if c.params != nil && len(c.params) != 0 {
 		c.url += "?" + c.params.Encode()
 	}
 
