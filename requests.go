@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"io"
 	"io/ioutil"
+	"mime/multipart"
 	"net/http"
 	"net/url"
 	"os"
@@ -17,8 +18,14 @@ type Client struct {
 	header http.Header
 	params url.Values
 
-	form url.Values
-	json interface{}
+	form      url.Values
+	json      interface{}
+	multipart FileForm
+}
+
+type FileForm struct {
+	Value url.Values
+	File  map[string]string
 }
 
 type Result struct {
@@ -85,46 +92,131 @@ func (c *Client) Json(json interface{}) *Client {
 	return c
 }
 
+func (c *Client) Multipart(multipart FileForm) *Client {
+	c.multipart = multipart
+	return c
+}
+
 func (c *Client) Send() *Result {
-	r := new(Result)
+	var result *Result
 
 	if c.params != nil && len(c.params) != 0 {
 		c.url += "?" + c.params.Encode()
 	}
 
 	contentType := c.header.Get("Content-Type")
-	var req *http.Request
-	if strings.HasPrefix(contentType, "application/json") {
-		b, err := json.Marshal(c.json)
-		if err != nil {
-			r.Err = err
-			return r
-		}
-
-		req, r.Err = http.NewRequest(c.method, c.url, bytes.NewReader(b))
-		if r.Err != nil {
-			return r
-		}
+	if c.multipart.Value != nil || c.multipart.File != nil {
+		result = c.createMultipartForm()
+	} else if strings.HasPrefix(contentType, "application/json") {
+		result = c.createJson()
 	} else if strings.HasPrefix(contentType, "application/x-www-form-urlencoded") {
-		form := c.form.Encode()
-
-		req, r.Err = http.NewRequest(c.method, c.url, strings.NewReader(form))
+		result = c.createForm()
 	} else {
-		req, r.Err = http.NewRequest(c.method, c.url, nil)
+		var result = new(Result)
+
+		req, err := http.NewRequest(c.method, c.url, nil)
+		if err != nil {
+			result.Err = err
+			return result
+		}
+
+		req.Header = c.header
+		result.Resp, result.Err = http.DefaultClient.Do(req)
+		return result
 	}
 
-	if r.Err != nil {
-		return r
+	return result
+}
+
+// form-data
+func (c *Client) createMultipartForm() *Result {
+	var result = new(Result)
+
+	body := &bytes.Buffer{}
+	writer := multipart.NewWriter(body)
+
+	for name, filename := range c.multipart.File {
+		file, err := os.Open(filename)
+		if err != nil {
+			result.Err = err
+			return result
+		}
+
+		part, err := writer.CreateFormFile(name, filename)
+		if err != nil {
+			result.Err = err
+			return result
+		}
+
+		// todo 这里的io.Copy实现，会把file文件都读取到内存里面，然后当做一个buffer传给NewRequest。对于大文件来说会占用很多内存
+		_, err = io.Copy(part, file)
+		if err != nil {
+			result.Err = err
+			return result
+		}
+
+		err = file.Close()
+		if err != nil {
+			result.Err = err
+			return result
+		}
+	}
+
+	for name, values := range c.multipart.Value {
+		for _, value := range values {
+			_ = writer.WriteField(name, value)
+		}
+	}
+
+	err := writer.Close()
+	if err != nil {
+		result.Err = err
+		return result
+	}
+
+	req, err := http.NewRequest(c.method, c.url, body)
+	req.Header = c.header
+	req.Header.Set("Content-Type", writer.FormDataContentType())
+	result.Resp, result.Err = http.DefaultClient.Do(req)
+	return result
+}
+
+// application/json
+func (c *Client) createJson() *Result {
+	var result = new(Result)
+
+	b, err := json.Marshal(c.json)
+	if err != nil {
+		result.Err = err
+		return result
+	}
+
+	req, err := http.NewRequest(c.method, c.url, bytes.NewReader(b))
+	if err != nil {
+		result.Err = err
+		return result
 	}
 
 	req.Header = c.header
+	result.Resp, result.Err = http.DefaultClient.Do(req)
+	return result
+}
 
-	r.Resp, r.Err = http.DefaultClient.Do(req)
-	if r.Err != nil {
-		return r
+// application/x-www-form-urlencoded
+func (c *Client) createForm() *Result {
+	var result = new(Result)
+
+	form := c.form.Encode()
+
+	req, err := http.NewRequest(c.method, c.url, strings.NewReader(form))
+	if err != nil {
+		result.Err = err
+		return result
 	}
 
-	return r
+	req.Header = c.header
+	result.Resp, result.Err = http.DefaultClient.Do(req)
+	return result
 }
 
 func (r *Result) Raw() ([]byte, error) {

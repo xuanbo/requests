@@ -13,6 +13,7 @@ func main() {
 	getText()
 	postForm()
 	postJson()
+	postMultipart()
 	handler()
 	save()
 	getJson()
@@ -73,6 +74,30 @@ func postJson() {
 		Json(map[string]interface{}{
 			"json1": "value1",
 			"json2": 2,
+		}).
+		Send().
+		Text()
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(text)
+}
+
+func postMultipart() {
+	text, err := requests.Post("http://127.0.0.1:8080/ping").
+		Params(url.Values{
+			"param1": {"value1"},
+			"param2": {"123"},
+		}).
+		Multipart(requests.FileForm{
+			Value: url.Values{
+				"form1": {"value1"},
+				"form2": {"value2"},
+			},
+			File: map[string]string{
+				"file1": "./examples/main.go",
+				"file2": "./examples/main.go",
+			},
 		}).
 		Send().
 		Text()
