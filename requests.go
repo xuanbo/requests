@@ -3,6 +3,7 @@ package requests
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"io"
 	"io/ioutil"
 	"mime/multipart"
@@ -217,6 +218,30 @@ func (c *Client) createForm() *Result {
 	req.Header = c.header
 	result.Resp, result.Err = http.DefaultClient.Do(req)
 	return result
+}
+
+func (r *Result) StatusOk() *Result {
+	if r.Err != nil {
+		return r
+	}
+	if r.Resp.StatusCode != http.StatusOK {
+		r.Err = errors.New("status code is not 200")
+		return r
+	}
+
+	return r
+}
+
+func (r *Result) Status2xx() *Result {
+	if r.Err != nil {
+		return r
+	}
+	if r.Resp.StatusCode < http.StatusOK || r.Resp.StatusCode >= http.StatusMultipleChoices {
+		r.Err = errors.New("status code is not match [200, 300)")
+		return r
+	}
+
+	return r
 }
 
 func (r *Result) Raw() ([]byte, error) {

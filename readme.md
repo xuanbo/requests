@@ -164,3 +164,21 @@ func save() {
 	}
 }
 ```
+
+### Check Status Code
+
+```go
+func save() {
+	err := requests.Get("https://github.com/xuanbo/requests").
+		Send().
+		// resp status code must be 200.
+		StatusOk().
+		Save("./requests.html")
+	if err != nil {
+		panic(err)
+	}
+}
+```
+
+* `StatusOk()`
+* `Status2xx()`
