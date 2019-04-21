@@ -15,6 +15,9 @@ import (
 
 // Client: 封装了http的参数等信息
 type Client struct {
+	// 自定义Client
+	client *http.Client
+
 	url    string
 	method string
 	header http.Header
@@ -66,6 +69,16 @@ func Delete(url string) *Client {
 	c := newClient()
 	c.url = url
 	c.method = http.MethodDelete
+	return c
+}
+
+// Request: 用于自定义请求方式，比如`HEAD`、`PATCH`、`OPTIONS`、`TRACE`
+// client参数用于替换DefaultClient，如果为nil则会使用默认的
+func Request(url, method string, client *http.Client) *Client {
+	c := newClient()
+	c.client = client
+	c.url = url
+	c.method = method
 	return c
 }
 
@@ -136,7 +149,7 @@ func (c *Client) Send() *Result {
 		}
 
 		req.Header = c.header
-		result.Resp, result.Err = http.DefaultClient.Do(req)
+		c.doSend(req, result)
 		return result
 	}
 
@@ -192,7 +205,7 @@ func (c *Client) createMultipartForm() *Result {
 	req, err := http.NewRequest(c.method, c.url, body)
 	req.Header = c.header
 	req.Header.Set("Content-Type", writer.FormDataContentType())
-	result.Resp, result.Err = http.DefaultClient.Do(req)
+	c.doSend(req, result)
 	return result
 }
 
@@ -213,7 +226,7 @@ func (c *Client) createJson() *Result {
 	}
 
 	req.Header = c.header
-	result.Resp, result.Err = http.DefaultClient.Do(req)
+	c.doSend(req, result)
 	return result
 }
 
@@ -230,8 +243,17 @@ func (c *Client) createForm() *Result {
 	}
 
 	req.Header = c.header
-	result.Resp, result.Err = http.DefaultClient.Do(req)
+	c.doSend(req, result)
 	return result
+}
+
+func (c *Client) doSend(req *http.Request, result *Result) {
+	if c.client != nil {
+		result.Resp, result.Err = c.client.Do(req)
+		return
+	}
+
+	result.Resp, result.Err = http.DefaultClient.Do(req)
 }
 
 // StatusOk: 判断http响应码是否为200

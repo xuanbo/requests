@@ -4,7 +4,7 @@
 
 ## 特点
 
-* `GET`、`POST`、`PUT`、`DELETE`
+* `GET`、`POST`、`PUT`、`DELETE`（Common HTTP methods）
 * `application/json`、`application/x-www-form-urlencoded`、`multipart/form-data`
 
 ## 例子
@@ -182,3 +182,20 @@ func save() {
 
 * `StatusOk()`
 * `Status2xx()`
+
+### 自定义http
+
+```go
+func customHttp() {
+	client := &http.Client{
+		Timeout: 5 * time.Second,
+	}
+	text, err := requests.Request("https://github.com/xuanbo", "OPTIONS", client).
+		Send().
+		Text()
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(text)
+}
+```

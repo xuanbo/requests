@@ -3,7 +3,9 @@ package main
 import (
 	"fmt"
 	"io/ioutil"
+	"net/http"
 	"net/url"
+	"time"
 
 	"github.com/xuanbo/requests"
 )
@@ -17,6 +19,7 @@ func main() {
 	handler()
 	save()
 	getJson()
+	customHttp()
 }
 
 func getRow() {
@@ -157,4 +160,17 @@ func handler() {
 	defer result.Resp.Body.Close()
 
 	fmt.Println(string(b))
+}
+
+func customHttp() {
+	client := &http.Client{
+		Timeout: 5 * time.Second,
+	}
+	text, err := requests.Request("https://github.com/xuanbo", "OPTIONS", client).
+		Send().
+		Text()
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(text)
 }
