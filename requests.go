@@ -13,6 +13,7 @@ import (
 	"strings"
 )
 
+// Client: 封装了http的参数等信息
 type Client struct {
 	url    string
 	method string
@@ -24,16 +25,19 @@ type Client struct {
 	multipart FileForm
 }
 
+// FileForm: form参数和文件参数
 type FileForm struct {
 	Value url.Values
 	File  map[string]string
 }
 
+// Result: http响应结果
 type Result struct {
 	Resp *http.Response
 	Err  error
 }
 
+// Get: http `GET` 请求
 func Get(url string) *Client {
 	c := newClient()
 	c.url = url
@@ -41,6 +45,7 @@ func Get(url string) *Client {
 	return c
 }
 
+// Post: http `POST` 请求
 func Post(url string) *Client {
 	c := newClient()
 	c.url = url
@@ -48,6 +53,7 @@ func Post(url string) *Client {
 	return c
 }
 
+// Put: http `PUT` 请求
 func Put(url string) *Client {
 	c := newClient()
 	c.url = url
@@ -55,6 +61,7 @@ func Put(url string) *Client {
 	return c
 }
 
+// Delete: http `DELETE` 请求
 func Delete(url string) *Client {
 	c := newClient()
 	c.url = url
@@ -62,6 +69,7 @@ func Delete(url string) *Client {
 	return c
 }
 
+// Params: http请求中url参数
 func (c *Client) Params(params url.Values) *Client {
 	for k, v := range params {
 		c.params[k] = v
@@ -69,11 +77,13 @@ func (c *Client) Params(params url.Values) *Client {
 	return c
 }
 
+// Header: http请求头
 func (c *Client) Header(k, v string) *Client {
 	c.header.Set(k, v)
 	return c
 }
 
+// Headers: http请求头
 func (c *Client) Headers(header http.Header) *Client {
 	for k, v := range header {
 		c.header[k] = v
@@ -81,23 +91,27 @@ func (c *Client) Headers(header http.Header) *Client {
 	return c
 }
 
+// Form: 表单提交参数
 func (c *Client) Form(form url.Values) *Client {
 	c.header.Set("Content-Type", "application/x-www-form-urlencoded")
 	c.form = form
 	return c
 }
 
+// Json: json提交参数
 func (c *Client) Json(json interface{}) *Client {
 	c.header.Set("Content-Type", "application/json")
 	c.json = json
 	return c
 }
 
+// Multipart: form-data提交参数
 func (c *Client) Multipart(multipart FileForm) *Client {
 	c.multipart = multipart
 	return c
 }
 
+// Send: 发送http请求
 func (c *Client) Send() *Result {
 	var result *Result
 
@@ -220,6 +234,7 @@ func (c *Client) createForm() *Result {
 	return result
 }
 
+// StatusOk: 判断http响应码是否为200
 func (r *Result) StatusOk() *Result {
 	if r.Err != nil {
 		return r
@@ -232,6 +247,7 @@ func (r *Result) StatusOk() *Result {
 	return r
 }
 
+// Status2xx: 判断http响应码是否为2xx
 func (r *Result) Status2xx() *Result {
 	if r.Err != nil {
 		return r
@@ -244,6 +260,7 @@ func (r *Result) Status2xx() *Result {
 	return r
 }
 
+// Raw: 获取http响应内容，返回字节数组
 func (r *Result) Raw() ([]byte, error) {
 	if r.Err != nil {
 		return nil, r.Err
@@ -259,6 +276,7 @@ func (r *Result) Raw() ([]byte, error) {
 	return b, r.Err
 }
 
+// Text: 获取http响应内容，返回字符串
 func (r *Result) Text() (string, error) {
 	b, err := r.Raw()
 	if err != nil {
@@ -269,6 +287,7 @@ func (r *Result) Text() (string, error) {
 	return string(b), nil
 }
 
+// Json: 获取http响应内容，返回json
 func (r *Result) Json(v interface{}) error {
 	b, err := r.Raw()
 	if err != nil {
@@ -279,6 +298,7 @@ func (r *Result) Json(v interface{}) error {
 	return json.Unmarshal(b, v)
 }
 
+// Save: 获取http响应内容，保存为文件
 func (r *Result) Save(name string) error {
 	if r.Err != nil {
 		return r.Err
