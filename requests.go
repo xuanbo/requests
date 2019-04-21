@@ -129,7 +129,13 @@ func (c *Client) Send() *Result {
 	var result *Result
 
 	if c.params != nil && len(c.params) != 0 {
-		c.url += "?" + c.params.Encode()
+		// 如果url中已经有query string参数，则只需要&拼接剩下的即可
+		encoded := c.params.Encode()
+		if strings.Index(c.url, "?") == -1 {
+			c.url += "?" + encoded
+		} else {
+			c.url += "&" + encoded
+		}
 	}
 
 	contentType := c.header.Get("Content-Type")
@@ -140,17 +146,7 @@ func (c *Client) Send() *Result {
 	} else if strings.HasPrefix(contentType, "application/x-www-form-urlencoded") {
 		result = c.createForm()
 	} else {
-		var result = new(Result)
-
-		req, err := http.NewRequest(c.method, c.url, nil)
-		if err != nil {
-			result.Err = err
-			return result
-		}
-
-		req.Header = c.header
-		c.doSend(req, result)
-		return result
+		result = c.createEmptyBody()
 	}
 
 	return result
@@ -237,6 +233,21 @@ func (c *Client) createForm() *Result {
 	form := c.form.Encode()
 
 	req, err := http.NewRequest(c.method, c.url, strings.NewReader(form))
+	if err != nil {
+		result.Err = err
+		return result
+	}
+
+	req.Header = c.header
+	c.doSend(req, result)
+	return result
+}
+
+// none http body
+func (c *Client) createEmptyBody() *Result {
+	var result = new(Result)
+
+	req, err := http.NewRequest(c.method, c.url, nil)
 	if err != nil {
 		result.Err = err
 		return result
