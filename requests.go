@@ -42,44 +42,28 @@ type Result struct {
 
 // Get: http `GET` 请求
 func Get(url string) *Client {
-	c := newClient()
-	c.url = url
-	c.method = http.MethodGet
-	return c
+	return newClient(url, http.MethodGet, nil)
 }
 
 // Post: http `POST` 请求
 func Post(url string) *Client {
-	c := newClient()
-	c.url = url
-	c.method = http.MethodPost
-	return c
+	return newClient(url, http.MethodPost, nil)
 }
 
 // Put: http `PUT` 请求
 func Put(url string) *Client {
-	c := newClient()
-	c.url = url
-	c.method = http.MethodPut
-	return c
+	return newClient(url, http.MethodPut, nil)
 }
 
 // Delete: http `DELETE` 请求
 func Delete(url string) *Client {
-	c := newClient()
-	c.url = url
-	c.method = http.MethodDelete
-	return c
+	return newClient(url, http.MethodDelete, nil)
 }
 
 // Request: 用于自定义请求方式，比如`HEAD`、`PATCH`、`OPTIONS`、`TRACE`
 // client参数用于替换DefaultClient，如果为nil则会使用默认的
 func Request(url, method string, client *http.Client) *Client {
-	c := newClient()
-	c.client = client
-	c.url = url
-	c.method = method
-	return c
+	return newClient(url, method, client)
 }
 
 // Params: http请求中url参数
@@ -355,8 +339,11 @@ func (r *Result) Save(name string) error {
 	return nil
 }
 
-func newClient() *Client {
+func newClient(u string, method string, client *http.Client) *Client {
 	return &Client{
+		client: client,
+		url:    u,
+		method: method,
 		header: make(http.Header),
 		params: make(url.Values),
 		form:   make(url.Values),
