@@ -289,6 +289,10 @@ func (c *Client) doSend(req *http.Request, result *Result) {
 
 // beforeSend 发送请求前，调用拦截器
 func (c *Client) beforeSend(req *http.Request) error {
+	mutex := defaultRequestInterceptorChain.mutex
+	mutex.RLock()
+	defer mutex.RUnlock()
+
 	for _, interceptor := range defaultRequestInterceptorChain.interceptors {
 		err := interceptor(req)
 		if err != nil {
