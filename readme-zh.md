@@ -6,6 +6,7 @@
 
 * `GET`、`POST`、`PUT`、`DELETE`（Common HTTP methods）
 * `application/json`、`application/x-www-form-urlencoded`、`multipart/form-data`
+* 请求拦截器
 
 ## 例子
 
@@ -191,6 +192,26 @@ func customHttp() {
 		Timeout: 5 * time.Second,
 	}
 	text, err := requests.Request("https://github.com/xuanbo", "OPTIONS", client).
+		Send().
+		Text()
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(text)
+}
+```
+
+### 请求拦截器
+
+```go
+func requestInterceptor() {
+	logRequestInterceptor := func(request *http.Request) error {
+		fmt.Println(request.URL)
+		return nil
+	}
+	requests.AddRequestInterceptors(logRequestInterceptor)
+
+	text, err := requests.Get("https://github.com/xuanbo").
 		Send().
 		Text()
 	if err != nil {

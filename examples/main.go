@@ -20,6 +20,7 @@ func main() {
 	save()
 	getJson()
 	customHttp()
+	requestInterceptor()
 }
 
 func getRow() {
@@ -167,6 +168,22 @@ func customHttp() {
 		Timeout: 5 * time.Second,
 	}
 	text, err := requests.Request("https://github.com/xuanbo", "OPTIONS", client).
+		Send().
+		Text()
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(text)
+}
+
+func requestInterceptor() {
+	logRequestInterceptor := func(request *http.Request) error {
+		fmt.Println(request.URL)
+		return nil
+	}
+	requests.AddRequestInterceptors(logRequestInterceptor)
+
+	text, err := requests.Get("https://github.com/xuanbo").
 		Send().
 		Text()
 	if err != nil {
