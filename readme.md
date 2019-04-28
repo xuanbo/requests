@@ -6,7 +6,7 @@
 
 * `GET`、`POST`、`PUT`、`DELETE`（Common HTTP methods）
 * `application/json`、`application/x-www-form-urlencoded`、`multipart/form-data`
-* Request Interceptor
+* Global Request Interceptor
 
 ## Examples
 
@@ -201,7 +201,7 @@ func customHttp() {
 }
 ```
 
-### Request Interceptor
+### Global Request Interceptor
 
 ```go
 func requestInterceptor() {

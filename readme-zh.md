@@ -6,7 +6,7 @@
 
 * `GET`、`POST`、`PUT`、`DELETE`（Common HTTP methods）
 * `application/json`、`application/x-www-form-urlencoded`、`multipart/form-data`
-* 请求拦截器
+* 全局请求拦截器
 
 ## 例子
 
@@ -201,7 +201,7 @@ func customHttp() {
 }
 ```
 
-### 请求拦截器
+### 全局请求拦截器
 
 ```go
 func requestInterceptor() {

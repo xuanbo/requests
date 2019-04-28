@@ -273,18 +273,14 @@ func (c *Client) createEmptyBody() *Result {
 
 // doSend 发送请求
 func (c *Client) doSend(req *http.Request, result *Result) {
-	// 调用拦截器
+	// 调用拦截器，遇到错误就退出
 	if err := c.beforeSend(req); err != nil {
 		result.Err = err
 		return
 	}
 
 	// 发送请求
-	if c.client == nil {
-		result.Resp, result.Err = http.DefaultClient.Do(req)
-	} else {
-		result.Resp, result.Err = c.client.Do(req)
-	}
+	result.Resp, result.Err = c.client.Do(req)
 }
 
 // beforeSend 发送请求前，调用拦截器
@@ -293,6 +289,7 @@ func (c *Client) beforeSend(req *http.Request) error {
 	mutex.RLock()
 	defer mutex.RUnlock()
 
+	// 遍历调用拦截器
 	for _, interceptor := range defaultRequestInterceptorChain.interceptors {
 		err := interceptor(req)
 		if err != nil {
@@ -384,7 +381,6 @@ func (r *Result) Save(name string) error {
 		r.Err = err
 		return r.Err
 	}
-
 	defer r.Resp.Body.Close()
 
 	return nil
@@ -392,6 +388,10 @@ func (r *Result) Save(name string) error {
 
 // newClient 创建Client
 func newClient(u string, method string, client *http.Client) *Client {
+	// client为nil则使用默认的DefaultClient
+	if client == nil {
+		client = http.DefaultClient
+	}
 	return &Client{
 		client: client,
 		url:    u,
@@ -405,7 +405,6 @@ func newClient(u string, method string, client *http.Client) *Client {
 // AddRequestInterceptors 添加请求拦截器
 func AddRequestInterceptors(interceptors ...RequestInterceptor) {
 	mutex := defaultRequestInterceptorChain.mutex
-
 	mutex.Lock()
 	defer mutex.Unlock()
 
